@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://cdn.jsdelivr.net; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'" />
+<meta name="referrer" content="no-referrer" />
+<title>LabDeck — Linux &amp; Python courses with live labs</title>
+<meta name="description" content="Two complete hands-on courses in Linux and Python with live in-browser labs and projects. Content is cached locally and reused offline." />
+<meta name="theme-color" content="#0b1020" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#/">Lab<span>Deck</span></a>
+    <nav class="topnav">
+      <a href="#/">Courses</a>
+      <a href="#/projects">Projects</a>
+      <a href="#/offline">Offline</a>
+      <a href="#/security">Security</a>
+    </nav>
+    <div class="badge" id="storageBadge" title="Local cache usage">cache: —</div>
+  </header>
+
+  <main id="app" aria-live="polite"></main>
+
+  <footer class="foot">
+    <span>LabDeck · static site · progress in <code>localStorage</code> · content in <code>Cache Storage</code> · CSP + sanitizer + integrity pinning enabled</span>
+  </footer>
+
+  <script src="assets/security.js"></script>
+  <script src="assets/catalog.js"></script>
+  <script src="assets/terminal.js"></script>
+  <script src="assets/pylab.js"></script>
+  <script src="assets/app.js"></script>
+</body>
+</html>
