@@ -1,0 +1,34 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Secrets — never commit these
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+secrets.json
+.wrangler/
+.dev.vars
+
+# Build output / caches
+dist/
+build/
+.cache/
+node_modules/
+coverage/
+*.log
+
+# Local tooling
+.history/
+.tmp/
