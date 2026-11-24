@@ -14,7 +14,7 @@ security surface is the browser code in `assets/` and the content in `data/packs
 
 **Please do not open a public issue for security problems.**
 
-- Email: **security@example.com**  ← replace with your address
+- Email: **mohammadashrafali96@gmail.com**  ← replace with your address
 - Or use GitHub → *Security* → *Report a vulnerability* (private advisory)
 
 Please include: affected file(s), a description, reproduction steps, and the
