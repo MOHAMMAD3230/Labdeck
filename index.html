@@ -10,6 +10,7 @@
 <meta name="theme-color" content="#0b1020" />
 <link rel="manifest" href="manifest.webmanifest" />
 <link rel="stylesheet" href="assets/styles.css" />
+<link rel="stylesheet" href="assets/onboarding.css" />
 </head>
 <body>
   <header class="topbar">
@@ -17,9 +18,11 @@
     <nav class="topnav">
       <a href="#/">Courses</a>
       <a href="#/projects">Projects</a>
+      <a href="#/daily">Daily</a>
       <a href="#/offline">Offline</a>
       <a href="#/security">Security</a>
     </nav>
+    <div class="badge game" id="gameBadge" title="Streak and XP">🔥 0 · 0 XP</div>
     <div class="badge" id="storageBadge" title="Local cache usage">cache: —</div>
   </header>
 
@@ -31,6 +34,7 @@
 
   <script src="assets/security.js"></script>
   <script src="assets/catalog.js"></script>
+  <script src="assets/onboarding.js"></script>
   <script src="assets/terminal.js"></script>
   <script src="assets/pylab.js"></script>
   <script src="assets/app.js"></script>
