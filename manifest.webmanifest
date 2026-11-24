@@ -1,0 +1,13 @@
+
+
+{
+  "name": "LabDeck — Linux & Python labs",
+  "short_name": "LabDeck",
+  "description": "Hands-on Linux and Python courses with live in-browser labs, cached for offline reuse.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0b1020",
+  "theme_color": "#0b1020",
+  "icons": []
+}
