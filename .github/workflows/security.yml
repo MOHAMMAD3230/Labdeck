@@ -1,0 +1,94 @@
+name: Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 6 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  codeql:
+    name: CodeQL (JavaScript)
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          queries: security-and-quality
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:javascript-typescript"
+
+  dependency-review:
+    name: Dependency review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: moderate
+
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  static-checks:
+    name: Static checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: CSP meta tag present
+        run: |
+          grep -q 'Content-Security-Policy' index.html \
+            || { echo "::error::CSP meta tag missing from index.html"; exit 1; }
+
+      - name: No unsafe DOM sinks
+        run: |
+          if grep -rnE 'document\.write\(|\.outerHTML[[:space:]]*=|insertAdjacentHTML' assets/ ; then
+            echo "::error::Unsafe DOM sink found — use Security.sanitizeHTML() instead"
+            exit 1
+          fi
+
+      - name: No insecure http:// references
+        run: |
+          if grep -rnE 'src="http://|href="http://' --include='*.html' --include='*.js' . ; then
+            echo "::error::Insecure http:// reference"
+            exit 1
+          fi
+
+      - name: No hard-coded secrets
+        run: |
+          if grep -rnE "(api[_-]?key|secret|token)[\"' ]*[:=][\"' ]*[A-Za-z0-9_-]{16,}" \
+               --include='*.js' --include='*.json' --include='*.yml' . ; then
+            echo "::error::Possible hard-coded secret"
+            exit 1
+          fi
+
+      - name: Sanitizer self-test still wired up
+        run: |
+          grep -q 'sanitizeHTML' assets/security.js \
+            || { echo "::error::Sanitizer missing from security.js"; exit 1; }
+          grep -q 'verifyPack' assets/security.js \
+            || { echo "::error::Integrity verification missing"; exit 1; }
