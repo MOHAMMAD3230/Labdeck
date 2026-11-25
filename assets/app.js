@@ -1,9 +1,11 @@
-/* LabDeck app shell: hash router, progress store, integrity-checked pack loader. */
+/* LabDeck app shell: hash router, progress store, integrity-checked pack loader,
+ * onboarding gate, ticket framing, XP/streak and the daily challenge. */
 (function () {
   'use strict';
 
   const CATALOG = window.CATALOG;
   const S = window.Security;
+  const G = window.Onboarding;
   const PACK_CACHE = 'labdeck-packs-v1';
   const LS_PROGRESS = 'labdeck.progress.v1';
   const LS_LABS = 'labdeck.labs.v1';
@@ -18,12 +20,6 @@
       try { this.progress = S.validateStore(localStorage.getItem(LS_PROGRESS)); } catch (e) { this.progress = {}; }
       try { this.labs = S.validateStore(localStorage.getItem(LS_LABS)); } catch (e) { this.labs = {}; }
       try { this.quiz = S.validateStore(localStorage.getItem(LS_QUIZ)); } catch (e) { this.quiz = {}; }
-    },
-    quizResult(key) { return this.quiz[key] || null; },
-    setQuizResult(key, best, total) {
-      const cur = this.quiz[key];
-      if (!cur || best > cur.best) this.quiz[key] = { best, total };
-      try { localStorage.setItem(LS_QUIZ, JSON.stringify(this.quiz)); } catch (e) { /* quota */ }
     },
     save() {
       try { localStorage.setItem(LS_PROGRESS, JSON.stringify(this.progress)); } catch (e) { /* quota */ }
@@ -42,6 +38,12 @@
       s.tasks[index] = true;
       this.labs[k] = s;
       this.save();
+    },
+    quizResult(key) { return this.quiz[key] || null; },
+    setQuizResult(key, best, total) {
+      const cur = this.quiz[key];
+      if (!cur || best > cur.best) this.quiz[key] = { best, total };
+      try { localStorage.setItem(LS_QUIZ, JSON.stringify(this.quiz)); } catch (e) { /* quota */ }
     },
     courseStats(course) {
       const lessons = course.modules.flatMap(m => m.lessons);
@@ -137,6 +139,14 @@
     return (n / 1024 / 1024).toFixed(1) + ' MB';
   }
 
+  function updateHeader() {
+    const el = $('#gameBadge');
+    if (!el) return;
+    const st = G.Game.state;
+    el.textContent = `🔥 ${st.streak} · ${st.xp} XP · L${G.Game.level()}`;
+    el.title = `Streak ${st.streak} day(s) · ${st.xp} XP · level ${G.Game.level()}`;
+  }
+
   async function updateBadge() {
     const badge = $('#storageBadge');
     if (!badge) return;
@@ -147,6 +157,13 @@
     let cached = 0;
     for (const c of CATALOG.courses) if (await Packs.isCached(c.id)) cached++;
     badge.textContent = `cache: ${cached}/${CATALOG.courses.length} packs · ${fmtBytes(usage)}`;
+  }
+
+  /** Award XP + streak on any completion event. */
+  function reward(xp) {
+    G.Game.addXp(xp);
+    G.Game.touchDay();
+    updateHeader();
   }
 
   /* ---------------- views ---------------- */
@@ -192,11 +209,45 @@
         </div>
       </article>`).join('');
 
+    const next = G.nextAction((cid, lid) => Store.isDone(cid, lid));
+    const nextCard = next ? `
+      <section class="next-card">
+        <div>
+          <p class="kicker">Next up</p>
+          <h3>${esc(next.lesson.title)}</h3>
+          <p>${esc(next.course.title)} · ${next.lesson.minutes} min · ${esc(next.lesson.kind)}</p>
+        </div>
+        <a class="btn primary" href="#/lesson/${next.course.id}/${next.lesson.id}">Continue →</a>
+      </section>` : `
+      <section class="next-card">
+        <div>
+          <p class="kicker">Complete</p>
+          <h3>You finished every lesson.</h3>
+          <p>Try a project, or reset a course to go again.</p>
+        </div>
+        <a class="btn primary" href="#/projects">Open projects →</a>
+      </section>`;
+
+    const d = G.daily();
+    const dailyDone = G.Game.dailyDoneToday();
+    const dailyTitle = dailyDone
+      ? 'Done for today ✓'
+      : (d.pick.kind === 'quiz' ? 'One question' : d.pick.micro.title);
+    const dailyCard = `
+      <section class="daily-card">
+        <div>
+          <p class="kicker">Daily challenge · ${esc(d.key)}</p>
+          <h3>${esc(dailyTitle)}</h3>
+          <p>${dailyDone ? 'Come back tomorrow to keep the streak.' : 'About 60 seconds. Keeps your streak alive.'}</p>
+        </div>
+        <a class="btn ${dailyDone ? 'ghost' : 'primary'}" href="#/daily">${dailyDone ? 'View' : 'Start'} →</a>
+      </section>`;
+
     app.innerHTML = `
       <section class="hero">
         <h1>Learn Linux and Python by <em>doing</em>, not watching.</h1>
-        <p>Two complete courses — 26 lessons, 12 live labs and 2 projects — with a real shell and a real
-        Python interpreter running in your browser. Content is downloaded once, integrity-checked and
+        <p>Two complete courses — 30 lessons, 12 live labs, 4 quizzes and 2 projects — with a real shell and a
+        real Python interpreter running in your browser. Content is downloaded once, integrity-checked and
         cached locally, so you can keep practising offline.</p>
         <div class="hero-actions">
           <a class="btn primary" href="#/course/linux">Start Linux Essentials</a>
@@ -204,12 +255,14 @@
           <button class="btn ghost" id="downloadAll">Download all courses</button>
         </div>
       </section>
+      ${nextCard}
+      ${dailyCard}
       <div class="grid">${cards}</div>
       <h2 style="margin:38px 0 0;font-size:22px">Live projects</h2>
       <p style="color:var(--muted);margin:6px 0 0">End-to-end tasks graded against real state — not multiple choice.</p>
       <div class="grid">${projectCards}</div>
       <div class="notice">
-        <strong>How storage works.</strong> Progress, lab task state and Python code live in
+        <strong>How storage works.</strong> Progress, lab task state, quiz scores and XP live in
         <code>localStorage</code>. Course packs and the Python runtime live in <code>Cache Storage</code> and are
         reused on every later visit. Every pack is hashed with SHA-256 and pinned on first download.
         <a href="#/security">See the security checks →</a>
@@ -253,7 +306,7 @@
           return `<a class="lesson-row" href="#/lesson/${course.id}/${l.id}">
             <span class="tick ${done ? 'on' : ''}">✓</span>
             <span class="t">${esc(l.title)}</span>
-            <span class="kind ${l.kind === 'lab' ? 'lab' : ''}">${esc(l.kind)}</span>
+            <span class="kind ${esc(l.kind)}">${esc(l.kind)}</span>
             <span class="mins">${l.minutes} min</span>
           </a>`;
         }).join('')}
@@ -296,19 +349,41 @@
   }
 
   function mountLab(container, lab, courseId, lessonId) {
+    const ticket = G.ticketFor(courseId, lessonId);
+    if (ticket) {
+      const banner = document.createElement('div');
+      banner.className = 'ticket';
+      const id = document.createElement('span');
+      id.className = 'ticket-id';
+      id.textContent = 'TICKET ' + ticket.id;
+      const sym = document.createElement('span');
+      sym.className = 'ticket-sym';
+      sym.textContent = ticket.symptom;
+      banner.appendChild(id);
+      banner.appendChild(sym);
+      container.appendChild(banner);
+    }
+
+    const mountPoint = document.createElement('div');
+    container.appendChild(mountPoint);
+
     const opts = {
       done: Store.labTasks(courseId, lessonId),
       storageKey: `labdeck.code.${courseId}.${lessonId}`,
-      onTask: i => Store.setLabTask(courseId, lessonId, i),
+      onTask: i => {
+        Store.setLabTask(courseId, lessonId, i);
+        reward(10);
+      },
       onComplete: () => {
         if (!Store.isDone(courseId, lessonId)) {
           Store.setDone(courseId, lessonId, true);
+          reward(25);
           toast('All tasks complete — marked as done');
         }
       }
     };
-    if (lab.type === 'python') window.PyLab.mount(container, lab, opts);
-    else window.TerminalLab.mount(container, lab, opts);
+    if (lab.type === 'python') window.PyLab.mount(mountPoint, lab, opts);
+    else window.TerminalLab.mount(mountPoint, lab, opts);
   }
 
   async function viewLesson(courseId, lessonId) {
@@ -350,6 +425,7 @@
     $('#markDone').addEventListener('click', () => {
       const now = !Store.isDone(course.id, lesson.id);
       Store.setDone(course.id, lesson.id, now);
+      if (now) reward(15);
       toast(now ? 'Lesson marked complete' : 'Lesson marked incomplete');
       viewLesson(course.id, lesson.id);
     });
@@ -454,6 +530,7 @@
       paintStatus();
       if (score >= pass && !Store.isDone(courseId, lessonId)) {
         Store.setDone(courseId, lessonId, true);
+        reward(50);
         toast('Quiz passed — lesson marked done');
       }
     });
@@ -468,6 +545,81 @@
     paintStatus();
   }
 
+  /* ---------------- onboarding + missions + daily ---------------- */
+  function viewStart() {
+    app.innerHTML = '';
+    G.renderStart(app, () => { location.hash = '#/mission/first'; });
+  }
+
+  function viewMission(missionId) {
+    const m = G.missionById(missionId);
+    if (!m) return viewNotFound();
+
+    app.innerHTML = `
+      <div class="crumbs"><a href="#/">Courses</a> / Mission</div>
+      <div class="page-head">
+        <div>
+          <h1>${esc(m.title)}</h1>
+          <p class="sub">${esc(m.symptom)}</p>
+          <div class="meta" style="margin-top:10px">
+            <span class="pill">TICKET ${esc(m.ticket)}</span>
+            <span class="pill">${m.minutes} min</span>
+          </div>
+        </div>
+      </div>
+      <div id="labMount"></div>
+      <nav class="lesson-nav">
+        <a class="btn small ghost" href="#/">Skip to courses</a>
+        <a class="btn small" href="#/course/linux">Open Linux Essentials →</a>
+      </nav>`;
+
+    const mountEl = $('#labMount');
+    const opts = {
+      done: Store.labTasks('mission', m.id),
+      storageKey: `labdeck.code.mission.${m.id}`,
+      onTask: i => { Store.setLabTask('mission', m.id, i); reward(10); },
+      onComplete: () => {
+        if (!Store.isDone('mission', m.id)) {
+          Store.setDone('mission', m.id, true);
+          reward(40);
+          toast('Ticket closed — that was module 4 of Linux Essentials');
+        }
+      }
+    };
+    if (m.lab.type === 'python') window.PyLab.mount(mountEl, m.lab, opts);
+    else window.TerminalLab.mount(mountEl, m.lab, opts);
+  }
+
+  function viewDaily() {
+    const d = G.daily();
+    app.innerHTML = `
+      <div class="crumbs"><a href="#/">Courses</a> / Daily challenge</div>
+      <div class="page-head">
+        <div>
+          <h1>Daily challenge</h1>
+          <p class="sub">One task a day, drawn from the courses. Resets at midnight.</p>
+          <div class="meta" style="margin-top:10px">
+            <span class="pill">${esc(d.key)}</span>
+            <span class="pill">🔥 ${G.Game.state.streak} day streak</span>
+            <span class="pill">${esc(d.pick.source)}</span>
+          </div>
+        </div>
+      </div>
+      <div id="dailyMount"></div>`;
+
+    const el = $('#dailyMount');
+    if (G.Game.dailyDoneToday()) {
+      el.innerHTML = `<div class="notice"><strong>Done for today.</strong> Come back tomorrow — the streak continues.</div>`;
+      return;
+    }
+    G.renderDaily(el, d.pick, correct => {
+      G.Game.completeDaily();
+      reward(correct ? 30 : 10);
+      toast(correct ? '+30 XP — correct' : '+10 XP — come back tomorrow');
+    });
+  }
+
+  /* ---------------- projects ---------------- */
   function viewProjects() {
     const cards = CATALOG.projects.map(p => `
       <article class="card">
@@ -532,6 +684,7 @@
     mountLab($('#labMount'), p.lab, p.id, 'project');
   }
 
+  /* ---------------- offline ---------------- */
   async function viewOffline() {
     const rows = [];
     for (const c of CATALOG.courses) {
@@ -556,6 +709,8 @@
       <dl class="kv">
         <dt>Progress store</dt><dd>localStorage · ${LS_PROGRESS}</dd>
         <dt>Lab state</dt><dd>localStorage · ${LS_LABS}</dd>
+        <dt>Quiz scores</dt><dd>localStorage · ${LS_QUIZ}</dd>
+        <dt>XP &amp; streak</dt><dd>localStorage · labdeck.game.v1</dd>
         <dt>Course packs</dt><dd>Cache Storage · ${PACK_CACHE}</dd>
         <dt>Python runtime</dt><dd>${pyReady ? 'loaded in this session' : 'downloaded on first Run, then cached'}</dd>
         <dt>Storage used</dt><dd>${usage} of ${quota}</dd>
@@ -591,7 +746,11 @@
       localStorage.removeItem(LS_PROGRESS);
       localStorage.removeItem(LS_LABS);
       localStorage.removeItem(LS_QUIZ);
+      localStorage.removeItem('labdeck.game.v1');
       Store.progress = {}; Store.labs = {}; Store.quiz = {};
+      G.Game.state = { xp: 0, streak: 0, lastDay: '', dailyDone: '', experience: G.Game.state.experience, onboarded: true };
+      G.Game.save();
+      updateHeader();
       toast('Progress cleared');
       viewOffline();
     });
@@ -611,6 +770,7 @@
     }
   }
 
+  /* ---------------- security ---------------- */
   async function viewSecurity() {
     const tests = S.selfTest();
     const csp = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
@@ -692,9 +852,17 @@
     const hash = location.hash.replace(/^#/, '') || '/';
     const parts = hash.split('/').filter(Boolean);
     window.scrollTo({ top: 0 });
+
+    // First run: everything funnels through onboarding, except the utility pages.
+    const utility = ['security', 'offline', 'start'].includes(parts[0]);
+    if (!G.Game.state.onboarded && !utility) return viewStart();
+
     if (parts.length === 0) return viewHome();
+    if (parts[0] === 'start') return viewStart();
     if (parts[0] === 'course' && parts[1]) return viewCourse(parts[1]);
     if (parts[0] === 'lesson' && parts[1] && parts[2]) return viewLesson(parts[1], parts[2]);
+    if (parts[0] === 'mission' && parts[1]) return viewMission(parts[1]);
+    if (parts[0] === 'daily') return viewDaily();
     if (parts[0] === 'projects') return viewProjects();
     if (parts[0] === 'project' && parts[1]) return viewProject(parts[1]);
     if (parts[0] === 'offline') return viewOffline();
@@ -704,9 +872,11 @@
 
   /* ---------------- boot ---------------- */
   Store.init();
+  G.Game.load();
   window.addEventListener('hashchange', route);
   route();
   updateBadge();
+  updateHeader();
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
