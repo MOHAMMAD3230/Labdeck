@@ -26,7 +26,7 @@ In scope:
 
 - Cross-site scripting via lesson content, quiz text or lab input
 - Bypass of the HTML sanitizer (`assets/security.js`)
-- Bypass of the course-pack integrity check (SHA-256 pinning)
+- Bypass of the course-pack integrity check (SHA-256 verification)
 - Escaping the terminal or Python sandbox into the page context
 - Prototype pollution through `localStorage` payloads
 - Tampering with XP, streak or quiz scores through `localStorage`
@@ -47,40 +47,21 @@ Out of scope:
 | --- | --- |
 | CSP | `index.html` meta tag + `_headers` |
 | Sanitizer | `Security.sanitizeHTML()` — tag whitelist, no event handlers |
-| Integrity | `Security.verifyPack()` — SHA-256 pinned on first load |
+| Integrity | `Security.verifyPack()` — SHA-256 compared against `assets/pack-hashes.js` |
 | Storage | `Security.validateStore()` — shape + prototype-key checks |
 | Input guards | `Security.guardCommand()` / `Security.guardPython()` |
 
 `'unsafe-eval'` is required by the Pyodide/WebAssembly runtime. Everything else is locked
 down (`object-src 'none'`, `base-uri 'none'`, `form-action 'none'`).
 
-### Data stored in the browser
+### Pack integrity
 
-Nothing leaves the device. All state is local:
+The expected SHA-256 of every course pack is generated at build time by
+`scripts/hash-packs.mjs` and shipped in `assets/pack-hashes.js`, inside the app shell. A
+downloaded or cached pack is hashed and compared before it is rendered; a mismatch aborts the
+load and the lesson body is never injected.
 
-| Key | Contents | Validation on read |
-| --- | --- | --- |
-| `labdeck.progress.v1` | Lesson completion booleans | Boolean coercion only |
-| `labdeck.labs.v1` | Per-task lab state | Array of booleans |
-| `labdeck.quiz.v1` | Best quiz scores | `0 ≤ best ≤ total`, integers |
-| `labdeck.game.v1` | XP, streak, last day, daily completion, experience | Numeric range checks, ISO date regex, experience whitelist |
-| `labdeck.pins.v1` | SHA-256 pack pins | Hex strings, compared on every load |
-| `labdeck.code.<course>.<lesson>` | Python editor contents | Length cap (`MAX_CODE`) |
+Trust-on-first-use remains only as a fallback for a course with no shipped hash. The
+`#/security` page reports that state as a failing self-test, so it cannot go unnoticed.
 
-No cookies, no analytics, no third-party requests other than the pinned Pyodide CDN
-(`cdn.jsdelivr.net`), which is restricted by CSP and cached by the service worker.
-
-### Known limitation
-
-Pack integrity uses **trust-on-first-use**: the hash is pinned on the first download, so a
-pack tampered with *before* that first load is trusted. The sanitizer remains the control for
-that case. See `SECURITY-ADVISORIES.md` for the published advisory.
-
-## Hardening checklist for maintainers
-
-- [ ] Enable **Dependabot alerts** and **secret scanning** (Settings → Code security)
-- [ ] Enable **Private vulnerability reporting** (Settings → Code security)
-- [ ] Protect `main`: require PR review, require status checks, block force-push
-- [ ] Require signed commits if you publish releases
-- [ ] Keep the Pyodide version pinned in `assets/pylab.js`
-- [ ] Re-run the checks on `#/security` after any change to `assets/security.js`
+**After editing anything in `data/packs/`, regenerate the hashes:**
