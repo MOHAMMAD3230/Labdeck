@@ -1,0 +1,10 @@
+.git
+.github
+.gitignore
+.gitattributes
+.editorconfig
+README.md
+SECURITY.md
+wrangler.jsonc
+.assetsignore
+node_modules
