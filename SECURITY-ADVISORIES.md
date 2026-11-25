@@ -5,7 +5,7 @@ versions live on the [GitHub Security Advisories](../../security/advisories) pag
 
 | ID | Date | Severity | Summary | Affected | Fixed in | Status |
 | --- | --- | --- | --- | --- | --- | --- |
-| — | 2026-11-24 | Medium | Course pack integrity check trusts the first download (TOFU) | `<= 3` | `4` | Draft — not published |
+| — | 2026-11-24 | Medium | Course pack integrity check trusts the first download (TOFU) | `<= 3` | `4` | Fixed — ready to publish |
 
 ## Reporting
 
@@ -17,7 +17,8 @@ security@example.com — see [SECURITY.md](SECURITY.md) for scope and response t
 
 ## Advisory 1 — Course pack integrity check trusts the first download (TOFU)
 
-**Status:** draft (private). Publish only once the fix is on `main`.
+**Status:** fixed in `4`. Publish the GitHub draft once this file is on `main`, then replace
+the `—` in the table above with the assigned `GHSA-…` identifier.
 
 | Field | Value |
 | --- | --- |
@@ -30,13 +31,13 @@ security@example.com — see [SECURITY.md](SECURITY.md) for scope and response t
 
 ### Summary
 
-Course packs are verified against a SHA-256 hash that is pinned on first download. A pack
-tampered with before the first load is pinned as trusted and passes every later integrity
-check, allowing injected markup to reach the page.
+Course packs were verified against a SHA-256 hash pinned on first download. A pack tampered
+with before the first load was pinned as trusted and passed every later integrity check,
+allowing injected markup to reach the page.
 
 ### Details
 
-`assets/security.js` implements `verifyPack()` as trust-on-first-use:
+`assets/security.js` implemented `verifyPack()` as trust-on-first-use:
 
 ```js
 if (!pins[courseId]) { pins[courseId] = hash; return { status: 'pinned' }; }
