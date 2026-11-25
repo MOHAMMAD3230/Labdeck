@@ -13,9 +13,11 @@ the browser. No backend, no build step.
 | `manifest.webmanifest` | Installable PWA metadata |
 | `sw.js` | Service worker: app shell + runtime caching |
 | `SECURITY.md` | Disclosure policy and security model |
+| `SECURITY-ADVISORIES.md` | Published and draft advisories |
 | `assets/styles.css` | Dark theme, layout, terminal and lab styling |
 | `assets/onboarding.css` | Onboarding screen, ticket banner, daily/next cards, streak badge |
-| `assets/security.js` | Sanitizer, SHA-256 pack pinning, storage validation, input guards |
+| `assets/pack-hashes.js` | **Generated** — expected SHA-256 of each course pack |
+| `assets/security.js` | Sanitizer, pack integrity, storage validation, input guards |
 | `assets/catalog.js` | Courses, modules, lessons, labs, quizzes, projects, task checks |
 | `assets/onboarding.js` | First-run flow, game state (XP/streak), tickets, daily challenge |
 | `assets/app.js` | Router, progress store, integrity-checked pack loader, all views |
@@ -23,6 +25,7 @@ the browser. No backend, no build step.
 | `assets/pylab.js` | Live Python lab — real CPython via Pyodide (WebAssembly) |
 | `data/packs/linux.json` | Linux lesson content (downloaded, verified, cached) |
 | `data/packs/python.json` | Python lesson content (downloaded, verified, cached) |
+| `scripts/hash-packs.mjs` | Regenerates `pack-hashes.js`; `--check` mode for CI |
 | `.github/workflows/` | `security.yml` (CodeQL, secret scan, static checks) and `deploy.yml` |
 | `wrangler.jsonc` | Workers static-assets config for deployment |
 
@@ -82,37 +85,20 @@ Level = `floor(XP / 250) + 1`.
 | `labdeck.labs.v1` | Per-task lab state |
 | `labdeck.quiz.v1` | Best quiz scores (`{best, total}`) |
 | `labdeck.game.v1` | XP, streak, last active day, daily completion, experience level |
-| `labdeck.pins.v1` | SHA-256 pins for each course pack |
+| `labdeck.pins.v1` | Fallback pack pins (only used when no hash is shipped) |
 | `labdeck.code.<course>.<lesson>` | Python editor contents |
-| `labdeck-shell-v3` (Cache Storage) | App shell |
-| `labdeck-runtime-v3` (Cache Storage) | Pyodide runtime from the pinned CDN |
+| `labdeck-shell-v4` (Cache Storage) | App shell |
+| `labdeck-runtime-v4` (Cache Storage) | Pyodide runtime from the pinned CDN |
 | `labdeck-packs-v1` (Cache Storage) | Course packs |
 
 Every `localStorage` payload is shape-validated on read and stripped of prototype-polluting
-keys. Course packs are hashed with SHA-256 and pinned on first download; a mismatch refuses
-to render.
+keys. Course packs are hashed with SHA-256 and compared against the hashes shipped in
+`assets/pack-hashes.js`; a mismatch refuses to render.
 
-## Security
+### Regenerating pack hashes
 
-| Control | Where | What it does |
-| --- | --- | --- |
-| Content-Security-Policy | `index.html` meta + `_headers` | Only `'self'` and the pinned Pyodide CDN; `object-src 'none'`, `base-uri 'none'`, `form-action 'none'`, `frame-ancestors 'none'` |
-| HTML sanitizer | `Security.sanitizeHTML` | Tag whitelist; strips `<script>`, event handlers, `javascript:` URLs |
-| Pack integrity | `Security.verifyPack` | SHA-256 pinned on first load, re-verified on every later load |
-| Storage validation | `Security.validateStore` | Shape checks, `__proto__`/`constructor`/`prototype` stripped, quiz scores range-checked |
-| Shell input guard | `Security.guardCommand` | 512-char limit, control characters rejected |
-| Python guard | `Security.guardPython` | 20 000-char limit, blocklist for `import js`, `pyodide`, `subprocess`, `os.system` |
-| Sandboxing | `terminal.js` | Commands only touch an in-memory filesystem; `curl`/`ssh`/`sudo` disabled |
-| Verification page | `#/security` | Runs the self-tests live and shows CSP state, pinned hashes and limits |
-
-`'unsafe-eval'` is present in the CSP because the Pyodide/WebAssembly runtime needs it to
-initialise. Everything else is locked down. This is a learning sandbox, not a security
-boundary for hostile code.
-
-## Run locally
-
-Service workers, Cache Storage and `crypto.subtle` need `http://localhost` or `https://`:
+Run this after **any** edit to `data/packs/`:
 
 ```bash
-python3 -m http.server 8080
-# open http://localhost:8080
+node scripts/hash-packs.mjs          # rewrite assets/pack-hashes.js
+node scripts/hash-packs.mjs --check  # exit 1 if the file is stale (used in CI)
