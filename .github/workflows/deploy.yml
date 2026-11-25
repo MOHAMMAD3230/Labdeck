@@ -1,0 +1,68 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Pre-deploy security checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: CSP meta tag present
+        run: |
+          grep -q 'Content-Security-Policy' index.html \
+            || { echo "::error::CSP meta tag missing"; exit 1; }
+
+      - name: Security headers present
+        run: |
+          grep -q 'Content-Security-Policy' _headers \
+            || { echo "::error::CSP missing from _headers"; exit 1; }
+          grep -q 'X-Content-Type-Options' _headers \
+            || { echo "::error::nosniff header missing"; exit 1; }
+
+      - name: Sanitizer and integrity checks wired up
+        run: |
+          grep -q 'sanitizeHTML' assets/security.js || exit 1
+          grep -q 'verifyPack'   assets/security.js || exit 1
+
+      - name: No unsafe DOM sinks
+        run: |
+          if grep -rnE 'document\.write\(|\.outerHTML[[:space:]]*=|insertAdjacentHTML' assets/ ; then
+            echo "::error::Unsafe DOM sink found"
+            exit 1
+          fi
+
+      - name: No insecure http:// references
+        run: |
+          if grep -rnE 'src="http://|href="http://' --include='*.html' --include='*.js' . ; then
+            echo "::error::Insecure http:// reference"
+            exit 1
+          fi
+
+  deploy:
+    name: Deploy to Cloudflare Workers
+    needs: verify
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy
+          wranglerVersion: "4"
