@@ -92,3 +92,9 @@ jobs:
             || { echo "::error::Sanitizer missing from security.js"; exit 1; }
           grep -q 'verifyPack' assets/security.js \
             || { echo "::error::Integrity verification missing"; exit 1; }
+
+
+
+
+      - name: Pack hashes are up to date
+        run: node scripts/hash-packs.mjs --check
