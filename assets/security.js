@@ -218,11 +218,14 @@
       pass: guardPython('from js import fetch').ok === false,
       detail: 'blocklist active'
     });
+
+    const storeProbe = validateStore('{"__proto__":{"x":1},"a":true}');
     results.push({
       name: 'Storage guard drops prototype-polluting keys',
-      pass: !('__proto__' in validateStore('{"__proto__":{"x":1},"a":true}')),
+      pass: !Object.prototype.hasOwnProperty.call(storeProbe, '__proto__') && storeProbe.a === true,
       detail: 'validated on read'
     });
+    
     const shipped = shippedHashes();
     results.push({
       name: 'Expected pack hashes shipped in the app shell',
