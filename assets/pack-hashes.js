@@ -4,9 +4,6 @@
  * pinned as trusted. Regenerate after editing anything in data/packs/:
  *
  *   node scripts/hash-packs.mjs
- *
- * NOTE: empty values mean "not generated yet" — the app falls back to
- * trust-on-first-use until you run the script once and commit the result.
  */
 window.PACK_HASHES = {
   linux: '7fa49ec74084688b2e5414b1634d0f90510ee5163b79b5eabb294c8d245dcaba',
