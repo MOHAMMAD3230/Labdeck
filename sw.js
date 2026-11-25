@@ -1,6 +1,6 @@
 /* LabDeck service worker — caches the app shell and reuses downloaded content offline. */
-const SHELL_CACHE = 'labdeck-shell-v3';
-const RUNTIME_CACHE = 'labdeck-runtime-v3';
+const SHELL_CACHE = 'labdeck-shell-v4';
+const RUNTIME_CACHE = 'labdeck-runtime-v4';
 const PACK_CACHE = 'labdeck-packs-v1';
 
 const SHELL = [
@@ -9,6 +9,7 @@ const SHELL = [
   './manifest.webmanifest',
   './assets/styles.css',
   './assets/onboarding.css',
+  './assets/pack-hashes.js',
   './assets/security.js',
   './assets/catalog.js',
   './assets/onboarding.js',
