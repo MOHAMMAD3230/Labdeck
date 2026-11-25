@@ -9,6 +9,6 @@
  * trust-on-first-use until you run the script once and commit the result.
  */
 window.PACK_HASHES = {
-  linux: '',
-  python: ''
+  linux: '7fa49ec74084688b2e5414b1634d0f90510ee5163b79b5eabb294c8d245dcaba',
+  python: '7ba9270856b5572951f4273c895fede74a74c7a059484b71fab85f29cb4562a4'
 };
