@@ -1,0 +1,18 @@
+# gitleaks configuration — https://github.com/gitleaks/gitleaks
+title = "LabDeck"
+
+[extend]
+useDefault = true
+
+# Public keys that are intentionally shipped in client-side code.
+# These are identifiers, not credentials:
+#   - Web3Forms access key  : identifies the form; cannot read submissions
+#   - hCaptcha SITE key     : rendered into every page that uses hCaptcha
+# The hCaptcha SECRET key must never appear here or anywhere in the repo.
+[allowlist]
+description = "Client-side public keys"
+regexTarget = "line"
+regexes = [
+  '''(?i)\bACCESS_KEY\s*=\s*['"][0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}['"]''',
+  '''(?i)\bHCAPTCHA_SITEKEY\s*=\s*['"][0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}['"]''',
+]
