@@ -1,5 +1,5 @@
 /* LabDeck app shell: hash router, progress store, integrity-checked pack loader,
- * onboarding gate, ticket framing, XP/streak and the daily challenge. */
+ * onboarding gate, ticket framing, XP/streak, daily challenge and feedback hooks. */
 (function () {
   'use strict';
 
@@ -80,7 +80,7 @@
 
       const verdict = await S.verifyPack(courseId, text);
       if (verdict.status === 'mismatch') {
-        throw new Error('Integrity check failed: the downloaded content does not match the pinned hash. Refusing to load it.');
+        throw new Error('Integrity check failed: the downloaded content does not match the expected hash. Refusing to load it.');
       }
 
       const json = JSON.parse(text);
@@ -166,7 +166,7 @@
     updateHeader();
   }
 
-  /* ---------------- views ---------------- */
+  /* ---------------- home ---------------- */
   function viewHome() {
     const cards = CATALOG.courses.map(c => {
       const s = Store.courseStats(c);
@@ -245,9 +245,9 @@
 
     app.innerHTML = `
       <section class="hero">
-        <h1>Learn Linux and Python by <em>doing</em>, not watching.</h1>
-        <p>Two complete courses — 30 lessons, 12 live labs, 4 quizzes and 2 projects — with a real shell and a
-        real Python interpreter running in your browser. Content is downloaded once, integrity-checked and
+        <h1>Learn Linux, Python, SQL and networking by <em>doing</em>.</h1>
+        <p>Four courses with live labs that run in your browser: a real shell, a real Python interpreter,
+        a real SQL engine and a simulated network. Content is downloaded once, integrity-checked and
         cached locally, so you can keep practising offline.</p>
         <div class="hero-actions">
           <a class="btn primary" href="#/course/linux">Start Linux Essentials</a>
@@ -262,9 +262,9 @@
       <p style="color:var(--muted);margin:6px 0 0">End-to-end tasks graded against real state — not multiple choice.</p>
       <div class="grid">${projectCards}</div>
       <div class="notice">
-        <strong>How storage works.</strong> Progress, lab task state, quiz scores and XP live in
+        <strong>How storage works.</strong> Progress, lab task state, quiz scores, XP and feedback live in
         <code>localStorage</code>. Course packs and the Python runtime live in <code>Cache Storage</code> and are
-        reused on every later visit. Every pack is hashed with SHA-256 and pinned on first download.
+        reused on every later visit. Every pack is hashed with SHA-256 and checked on load.
         <a href="#/security">See the security checks →</a>
       </div>`;
 
@@ -293,6 +293,7 @@
     }
   }
 
+  /* ---------------- course ---------------- */
   function viewCourse(courseId) {
     const course = findCourse(courseId);
     if (!course) return viewNotFound();
@@ -332,22 +333,12 @@
       <div class="progress-row" style="margin-bottom:20px">
         <div class="bar"><i style="width:${s.pct}%"></i></div><span>${s.pct}%</span>
       </div>
-      ${modules}`;
-          <div id="feedbackMount"></div>
-    
-if (window.Feedback) {
-      window.Feedback.render($('#feedbackMount'), {
-        courseId: course.id,
-        title: 'How was ' + course.title + '?'
-      });
-    }
-    
-
-
-
+      ${modules}
+      <div id="feedbackMount"></div>`;
 
     const dl = app.querySelector('[data-download]');
     if (dl) dl.addEventListener('click', () => downloadCourse(course.id, dl));
+
     const reset = app.querySelector('[data-reset]');
     if (reset) reset.addEventListener('click', () => {
       flatLessons(course).forEach(l => Store.setDone(course.id, l.id, false));
@@ -358,8 +349,16 @@ if (window.Feedback) {
       toast('Progress reset for ' + course.title);
       viewCourse(course.id);
     });
+
+    if (window.Feedback) {
+      window.Feedback.render($('#feedbackMount'), {
+        courseId: course.id,
+        title: 'How was ' + course.title + '?'
+      });
+    }
   }
 
+  /* ---------------- lab mounting (registry-aware) ---------------- */
   function mountLab(container, lab, courseId, lessonId) {
     const ticket = G.ticketFor(courseId, lessonId);
     if (ticket) {
@@ -394,10 +393,12 @@ if (window.Feedback) {
         }
       }
     };
+
     const mountFn = (window.LabTypes && window.LabTypes[lab.type]) || window.TerminalLab.mount;
     mountFn(mountPoint, lab, opts);
   }
 
+  /* ---------------- lesson ---------------- */
   async function viewLesson(courseId, lessonId) {
     const course = findCourse(courseId);
     if (!course) return viewNotFound();
@@ -430,33 +431,10 @@ if (window.Feedback) {
       </article>
       <div id="labMount"></div>
       <nav class="lesson-nav">
-           
         ${prev ? `<a class="btn small" href="#/lesson/${course.id}/${prev.id}">← ${esc(prev.title)}</a>` : '<span></span>'}
         ${next ? `<a class="btn small" href="#/lesson/${course.id}/${next.id}">${esc(next.title)} →</a>` : '<span></span>'}
-      </nav>`;
-     <div id="lessonFeedback"></div>
-            if (window.Feedback) {
-      window.Feedback.render($('#lessonFeedback'), {
-        courseId: course.id,
-        lessonId: lesson.id,
-        title: 'Was this lesson clear?'
-      });
-    }
-    if (parts[0] === 'feedback') return viewFeedback();
-  function viewFeedback() {
-    app.innerHTML = `
-      <div class="crumbs"><a href="#/">Courses</a> / Feedback</div>
-      <h1>Your feedback</h1>
-      <p style="color:var(--muted);max-width:65ch">Everything sent from this browser. Queued items are retried
-      automatically when the endpoint is reachable.</p>
-      <div id="fbInbox"></div>`;
-    window.Feedback.renderInbox($('#fbInbox'));
-  }
-    
-
-
-
-    
+      </nav>
+      <div id="lessonFeedback"></div>`;
 
     $('#markDone').addEventListener('click', () => {
       const now = !Store.isDone(course.id, lesson.id);
@@ -479,6 +457,14 @@ if (window.Feedback) {
 
     if (lesson.lab) mountLab($('#labMount'), lesson.lab, course.id, lesson.id);
     if (lesson.quiz) mountQuiz($('#labMount'), lesson.quiz, course.id, lesson.id);
+
+    if (window.Feedback) {
+      window.Feedback.render($('#lessonFeedback'), {
+        courseId: course.id,
+        lessonId: lesson.id,
+        title: 'Was this lesson clear?'
+      });
+    }
   }
 
   /* ---------------- quiz ---------------- */
@@ -581,7 +567,7 @@ if (window.Feedback) {
     paintStatus();
   }
 
-  /* ---------------- onboarding + missions + daily ---------------- */
+  /* ---------------- onboarding, missions, daily ---------------- */
   function viewStart() {
     app.innerHTML = '';
     G.renderStart(app, () => { location.hash = '#/mission/first'; });
@@ -622,8 +608,8 @@ if (window.Feedback) {
         }
       }
     };
-    if (m.lab.type === 'python') window.PyLab.mount(mountEl, m.lab, opts);
-    else window.TerminalLab.mount(mountEl, m.lab, opts);
+    const mountFn = (window.LabTypes && window.LabTypes[m.lab.type]) || window.TerminalLab.mount;
+    mountFn(mountEl, m.lab, opts);
   }
 
   function viewDaily() {
@@ -720,6 +706,17 @@ if (window.Feedback) {
     mountLab($('#labMount'), p.lab, p.id, 'project');
   }
 
+  /* ---------------- feedback inbox ---------------- */
+  function viewFeedback() {
+    app.innerHTML = `
+      <div class="crumbs"><a href="#/">Courses</a> / Feedback</div>
+      <h1>Your feedback</h1>
+      <p style="color:var(--muted);max-width:65ch">Everything sent from this browser. Queued items are retried
+      automatically when the endpoint is reachable.</p>
+      <div id="fbInbox"></div>`;
+    if (window.Feedback) window.Feedback.renderInbox($('#fbInbox'));
+  }
+
   /* ---------------- offline ---------------- */
   async function viewOffline() {
     const rows = [];
@@ -747,6 +744,7 @@ if (window.Feedback) {
         <dt>Lab state</dt><dd>localStorage · ${LS_LABS}</dd>
         <dt>Quiz scores</dt><dd>localStorage · ${LS_QUIZ}</dd>
         <dt>XP &amp; streak</dt><dd>localStorage · labdeck.game.v1</dd>
+        <dt>Feedback</dt><dd>localStorage · labdeck.feedback.v1</dd>
         <dt>Course packs</dt><dd>Cache Storage · ${PACK_CACHE}</dd>
         <dt>Python runtime</dt><dd>${pyReady ? 'loaded in this session' : 'downloaded on first Run, then cached'}</dd>
         <dt>Storage used</dt><dd>${usage} of ${quota}</dd>
@@ -842,9 +840,9 @@ if (window.Feedback) {
           <tr><td style="padding:9px 0;border-bottom:1px solid var(--line)">Secure context (https / localhost)</td>
               <td style="border-bottom:1px solid var(--line);color:${secure ? 'var(--accent)' : 'var(--warn)'}">
               ${secure ? 'yes' : 'no — crypto.subtle and service workers unavailable'}</td></tr>
-          <tr><td style="padding:9px 0;border-bottom:1px solid var(--line)">Course pack integrity (SHA-256 pins)</td>
+          <tr><td style="padding:9px 0;border-bottom:1px solid var(--line)">Course pack integrity (SHA-256)</td>
               <td style="border-bottom:1px solid var(--line);color:var(--accent)">
-              ${Object.keys(pins).length} pinned</td></tr>
+              ${Object.keys(pins).length} trusted</td></tr>
           <tr><td style="padding:9px 0;border-bottom:1px solid var(--line)">Shell input limit</td>
               <td style="border-bottom:1px solid var(--line)">${S.MAX_COMMAND} characters, control chars rejected</td></tr>
           <tr><td style="padding:9px 0;border-bottom:1px solid var(--line)">Python code limit</td>
@@ -855,7 +853,7 @@ if (window.Feedback) {
       <h2 style="font-size:18px;margin-top:30px">Live self-tests</h2>
       <table style="width:100%;border-collapse:collapse;font-size:14px"><tbody>${rows}</tbody></table>
 
-      <h2 style="font-size:18px;margin-top:30px">Pinned pack hashes</h2>
+      <h2 style="font-size:18px;margin-top:30px">Trusted pack hashes</h2>
       <table style="width:100%;border-collapse:collapse;font-size:14px"><tbody>${pinRows}</tbody></table>
 
       <div class="hero-actions" style="margin-top:22px">
@@ -864,11 +862,10 @@ if (window.Feedback) {
 
       <div class="notice">
         <strong>What this does and does not protect.</strong> The sanitizer stops course content from injecting
-        markup or script; the pins detect a tampered or swapped course pack; the guards bound what lab input can do.
+        markup or script; the hashes detect a tampered or swapped course pack; the guards bound what lab input can do.
         The Python runtime needs <code>'unsafe-eval'</code> in the CSP to initialise WebAssembly, so the CSP is
         strict everywhere else (<code>object-src 'none'</code>, <code>base-uri 'none'</code>,
-        <code>form-action 'none'</code>, no third-party origins except the pinned CDN). This is a learning sandbox,
-        not a security boundary for hostile code.
+        <code>form-action 'none'</code>). This is a learning sandbox, not a security boundary for hostile code.
       </div>`;
 
     $('#rePin').addEventListener('click', () => {
@@ -890,7 +887,7 @@ if (window.Feedback) {
     window.scrollTo({ top: 0 });
 
     // First run: everything funnels through onboarding, except the utility pages.
-    const utility = ['security', 'offline', 'start'].includes(parts[0]);
+    const utility = ['security', 'offline', 'start', 'feedback'].includes(parts[0]);
     if (!G.Game.state.onboarded && !utility) return viewStart();
 
     if (parts.length === 0) return viewHome();
@@ -901,6 +898,7 @@ if (window.Feedback) {
     if (parts[0] === 'daily') return viewDaily();
     if (parts[0] === 'projects') return viewProjects();
     if (parts[0] === 'project' && parts[1]) return viewProject(parts[1]);
+    if (parts[0] === 'feedback') return viewFeedback();
     if (parts[0] === 'offline') return viewOffline();
     if (parts[0] === 'security') return viewSecurity();
     return viewNotFound();
