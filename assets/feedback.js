@@ -8,15 +8,16 @@
   const LS = 'labdeck.feedback.v1';
   const MAX_LOCAL = 50;
   const MAX_TEXT = 1000;
-
-  /* ---- configuration ---- */
+  
+/* ---- configuration ---- */
   const OWNER_EMAIL = 'mohammadashrafali96@gmail.com';
   const PROVIDER = 'web3forms';                 // 'web3forms' | 'formspree'
-  const ACCESS_KEY = 'YOUR_ACCESS_KEY';         // from web3forms.com
+  const ACCESS_KEY = 'f0af3b10-1638-4572-88cd-a8517b42700c';
   const FORMSPREE_ID = 'YOUR_FORM_ID';          // only if PROVIDER = 'formspree'
 
   const USE_CAPTCHA = true;
-  const HCAPTCHA_SITEKEY = 'YOUR_HCAPTCHA_SITE_KEY';   // from hcaptcha.com (public key)
+  const HCAPTCHA_SITEKEY = '3d34d27a-9524-42ea-9f06-0cc45d6e9a8c';
+
 
   const CONFIGURED =
     (PROVIDER === 'web3forms' && ACCESS_KEY && ACCESS_KEY !== 'YOUR_ACCESS_KEY') ||
