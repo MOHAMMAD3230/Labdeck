@@ -41,12 +41,16 @@
       if (!ALLOWED.has(tag)) { cleanNode(child, parent); continue; } // unwrap unknown tags
 
       const el = document.createElement(tag.toLowerCase());
-      if (tag === 'A') {
+      
+       if (tag === 'A') {
         const href = child.getAttribute('href') || '';
-        if (/^https?:\/\//i.test(href)) {
+        const safe = /^https?:\/\//i.test(href) || /^#\//.test(href) || /^\.{0,2}\//.test(href);
+        if (safe) {
           el.setAttribute('href', href);
-          el.setAttribute('rel', 'noopener noreferrer');
-          el.setAttribute('target', '_blank');
+          if (/^https?:/i.test(href)) {
+            el.setAttribute('rel', 'noopener noreferrer');
+            el.setAttribute('target', '_blank');
+          }
         }
       }
       if (tag === 'CODE') {
