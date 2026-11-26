@@ -2,25 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-
-
-  <!-- ✅ Google Tag Manager -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=GT-NC6T5LRJ"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'GT-NC6T5LRJ');
-  </script>
-
-
-
-
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://cdn.jsdelivr.net; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'" />
 <meta name="referrer" content="no-referrer" />
-<title>LabDeck — Linux &amp; Python courses with live labs</title>
-<meta name="description" content="Two complete hands-on courses in Linux and Python with live in-browser labs and projects. Content is cached locally and reused offline." />
+<title>LabDeck — Linux, Python, SQL &amp; networking labs</title>
+<meta name="description" content="Hands-on courses in Linux, Python, SQL and networking with live in-browser labs. Content is cached locally and reused offline." />
 <meta name="theme-color" content="#0b1020" />
 <link rel="manifest" href="manifest.webmanifest" />
 <link rel="stylesheet" href="assets/styles.css" />
@@ -43,13 +29,19 @@
   <main id="app" aria-live="polite"></main>
 
   <footer class="foot">
-    <span>LabDeck · static site · progress in <code>localStorage</code> · content in <code>Cache Storage</code> · CSP + sanitizer + integrity pinning enabled</span>
+    <span>LabDeck · static site · progress in <code>localStorage</code> · content in <code>Cache Storage</code></span>
   </footer>
 
-  <script src="assets/pack-hashes.js"></script>
   <script src="assets/security.js"></script>
+  <script src="assets/pack-hashes.js"></script>
   <script src="assets/catalog.js"></script>
+  <script src="assets/courses/sql.js"></script>
+  <script src="assets/courses/networking.js"></script>
+  <script src="assets/extensions.js"></script>
   <script src="assets/onboarding.js"></script>
+  <script src="assets/labs/console.js"></script>
+  <script src="assets/labs/sql.js"></script>
+  <script src="assets/labs/net.js"></script>
   <script src="assets/terminal.js"></script>
   <script src="assets/pylab.js"></script>
   <script src="assets/app.js"></script>
