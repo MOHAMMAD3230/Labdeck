@@ -1,0 +1,36 @@
+/* LabDeck — feedback forms */
+.feedback{
+  border:1px solid var(--line);border-radius:var(--radius);
+  background:linear-gradient(180deg,var(--panel),#101830);
+  padding:22px;margin-top:34px;
+}
+.feedback h3{margin:0 0 6px;font-size:19px;letter-spacing:-.01em}
+.fb-sub{color:var(--muted);font-size:13.5px;margin:0 0 18px;max-width:62ch}
+
+.fb-rating{border:0;padding:0;margin:0 0 16px}
+.fb-rating legend{font-size:14px;color:var(--text);padding:0;margin-bottom:10px}
+.fb-stars{display:flex;gap:8px}
+.fb-stars label{
+  display:grid;place-items:center;width:44px;height:44px;border-radius:10px;
+  border:1px solid var(--line);background:#0d1428;color:var(--muted);
+  font-family:var(--mono);font-size:14px;cursor:pointer;transition:.15s;
+}
+.fb-stars label:hover{border-color:#3a4a75;color:var(--text)}
+.fb-stars input{position:absolute;opacity:0;pointer-events:none}
+.fb-stars input:checked + span{color:#06231a}
+.fb-stars label:has(input:checked){background:var(--accent);border-color:var(--accent);color:#06231a;font-weight:800}
+
+.fb-field{display:block;margin:0 0 14px}
+.fb-field > span{display:block;font-size:13.5px;margin-bottom:6px;color:var(--text)}
+.fb-field em{color:var(--muted);font-style:normal;font-size:12.5px}
+.fb-field textarea,.fb-field input{
+  width:100%;background:#05080f;border:1px solid #1d2743;border-radius:10px;
+  padding:10px 12px;color:var(--text);font:inherit;font-size:14px;outline:0;resize:vertical;
+}
+.fb-field textarea:focus,.fb-field input:focus{border-color:#3a4a75}
+
+.fb-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:6px}
+.fb-status{font-size:13px;color:var(--muted)}
+.fb-status.ok{color:var(--accent)}
+.fb-status.warn{color:var(--warn)}
+.fb-status.err{color:var(--danger)}
