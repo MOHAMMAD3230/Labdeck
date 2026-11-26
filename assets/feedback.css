@@ -29,10 +29,12 @@
 }
 .fb-field textarea:focus,.fb-field input:focus{border-color:#3a4a75}
 
+.fb-captcha{margin:4px 0 16px;min-height:78px}
+.fb-captcha iframe{border-radius:10px}
+
 .fb-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:6px}
 .fb-status{font-size:13px;color:var(--muted)}
 .fb-status.ok{color:var(--accent)}
 .fb-status.warn{color:var(--warn)}
 .fb-status.err{color:var(--danger)}
-.fb-captcha{margin:4px 0 16px;min-height:78px}
-.fb-captcha iframe{border-radius:10px}
+.fb-status a{color:var(--accent-2)}
