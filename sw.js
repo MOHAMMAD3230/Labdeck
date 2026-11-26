@@ -22,6 +22,8 @@ const SHELL = [
   './assets/labs/sql.js',
   './assets/labs/net.js',
   './assets/pack-hashes.js',
+   './assets/feedback.js',
+  './assets/feedback.css',
   './assets/pylab.js'
 ];
 
