@@ -382,8 +382,8 @@
         }
       }
     };
-    if (lab.type === 'python') window.PyLab.mount(mountPoint, lab, opts);
-    else window.TerminalLab.mount(mountPoint, lab, opts);
+    const mountFn = (window.LabTypes && window.LabTypes[lab.type]) || window.TerminalLab.mount;
+    mountFn(mountPoint, lab, opts);
   }
 
   async function viewLesson(courseId, lessonId) {
