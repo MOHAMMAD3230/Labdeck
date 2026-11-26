@@ -12,11 +12,11 @@
 /* ---- configuration ---- */
   const OWNER_EMAIL = 'mohammadashrafali96@gmail.com';
   const PROVIDER = 'web3forms';                 // 'web3forms' | 'formspree'
-  const ACCESS_KEY = 'f0af3b10-1638-4572-88cd-a8517b42700c';
+  const ACCESS_KEY = 'f0af3b10-1638-4572-88cd-a8517b42700c';      // gitleaks:allow
   const FORMSPREE_ID = 'YOUR_FORM_ID';          // only if PROVIDER = 'formspree'
 
   const USE_CAPTCHA = true;
-  const HCAPTCHA_SITEKEY = '3d34d27a-9524-42ea-9f06-0cc45d6e9a8c';
+  const HCAPTCHA_SITEKEY = '3d34d27a-9524-42ea-9f06-0cc45d6e9a8c';     // gitleaks:allow
 
 
   const CONFIGURED =
