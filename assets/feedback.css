@@ -34,3 +34,5 @@
 .fb-status.ok{color:var(--accent)}
 .fb-status.warn{color:var(--warn)}
 .fb-status.err{color:var(--danger)}
+.fb-captcha{margin:4px 0 16px;min-height:78px}
+.fb-captcha iframe{border-radius:10px}
