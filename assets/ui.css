@@ -1,0 +1,189 @@
+/* LabDeck — responsive layout + storage danger zone */
+
+/* ============ danger zone ============ */
+.btn.danger{
+  background:#2a1414;border-color:#7d3b3b;color:#ffb4b4;
+}
+.btn.danger:hover{background:#3a1a1a;border-color:#a44}
+
+.dz-modal{max-width:520px}
+.dz-summary{
+  font-size:13.5px;color:var(--muted);margin:0 0 14px;
+  padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#0d1428;
+}
+.dz-summary b{color:var(--text)}
+
+.dz-details{
+  border:1px solid var(--line);border-radius:10px;background:#0d1428;
+  margin-bottom:10px;overflow:hidden;
+}
+.dz-details summary{
+  cursor:pointer;padding:10px 12px;font-size:13px;font-weight:600;
+  color:var(--text);list-style:none;
+}
+.dz-details summary::-webkit-details-marker{display:none}
+.dz-details summary::before{content:'▸ ';color:var(--muted)}
+.dz-details[open] summary::before{content:'▾ '}
+
+.dz-list{list-style:none;margin:0;padding:0 12px 10px;max-height:180px;overflow:auto}
+.dz-list li{
+  display:flex;justify-content:space-between;gap:12px;
+  font-size:12px;padding:5px 0;border-top:1px solid #1b2440;
+}
+.dz-list code{background:none;border:0;padding:0;font-size:11.5px;color:var(--muted);word-break:break-all}
+.dz-list span{color:var(--muted);white-space:nowrap;font-family:var(--mono);font-size:11px}
+
+.dz-heading{
+  font-size:12px;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--danger);margin:20px 0 6px;
+}
+.dz-warn{font-size:12.5px;color:var(--muted);margin:0 0 12px;line-height:1.5}
+
+.dz-row{
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  border:1px solid var(--line);border-radius:10px;background:#101830;
+  padding:12px 14px;margin-bottom:10px;
+}
+.dz-row.armed{border-color:#7d3b3b;background:#1a1113}
+.dz-info{flex:1;min-width:180px}
+.dz-info b{display:block;font-size:13.5px;margin-bottom:3px}
+.dz-info span{font-size:12px;color:var(--muted);line-height:1.45;display:block}
+.dz-info code{font-size:11.5px}
+
+.dz-confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;width:100%}
+.dz-confirm input{
+  flex:1;min-width:120px;background:#05080f;border:1px solid #7d3b3b;border-radius:8px;
+  padding:8px 10px;color:var(--text);font-family:var(--mono);font-size:13px;outline:0;
+  letter-spacing:.1em;text-transform:uppercase;
+}
+.dz-confirm input:focus{border-color:#a44}
+
+/* ============ responsive ============ */
+
+/* tablets and small laptops */
+@media (max-width:1024px){
+  main{padding:22px 18px 52px}
+  .grid{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+  .hero h1{font-size:clamp(26px,4.6vw,38px)}
+  .page-head h1{font-size:26px}
+}
+
+/* tablets portrait */
+@media (max-width:820px){
+  .topbar{flex-wrap:wrap;row-gap:8px;padding:10px 14px}
+  .brand{order:1;font-size:17px}
+  #accountChip{order:2;margin-left:auto;max-width:130px}
+  .badge.game{order:3;margin-left:8px;font-size:11px;padding:4px 10px}
+  #storageBadge{order:4;font-size:11px;padding:4px 10px}
+  .topnav{
+    order:5;flex-basis:100%;gap:14px;
+    overflow-x:auto;white-space:nowrap;padding-bottom:4px;
+    -webkit-overflow-scrolling:touch;scrollbar-width:none;
+  }
+  .topnav::-webkit-scrollbar{display:none}
+  .topnav a{font-size:13px}
+
+  main{padding:18px 14px 44px}
+  .hero{padding:14px 0 4px}
+  .hero p{font-size:15px}
+  .hero-actions .btn{flex:1;justify-content:center;min-width:140px}
+
+  .page-head{gap:12px;margin-bottom:18px}
+  .page-head h1{font-size:23px}
+  .page-head .actions{margin-left:0;width:100%}
+  .page-head .actions .btn{flex:1;justify-content:center}
+
+  .module > h4{padding:12px 14px;font-size:12.5px}
+  .lesson-row{padding:12px 14px;gap:9px;flex-wrap:wrap}
+  .lesson-row .t{flex:1 1 100%;order:2;font-size:14.5px}
+  .lesson-row .tick{order:1}
+  .lesson-row .kind{order:3;margin-left:27px}
+  .lesson-row .mins{order:4;margin-left:auto}
+
+  .lesson-body{max-width:100%}
+  .lesson-body h2{font-size:21px}
+  .lesson-body pre{font-size:12.5px;padding:12px}
+
+  .lab-main,.lab-side{padding:14px}
+  .term{height:300px}
+  .term-form .ps1{max-width:45%;overflow:hidden;text-overflow:ellipsis}
+  .py-editor{min-height:180px}
+
+  .next-card,.daily-card{padding:16px}
+  .feedback{padding:18px;margin-top:26px}
+  .fb-stars label{width:40px;height:40px}
+
+  .kv{grid-template-columns:1fr;gap:4px 0}
+  .kv dt{margin-top:10px;font-size:12.5px}
+  .kv dd{font-size:12.5px;word-break:break-all}
+
+  main table{display:block;width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  main table th,main table td{white-space:nowrap}
+
+  .auth-modal{padding:22px 18px 18px}
+  .dz-modal{max-width:100%}
+  .foot{font-size:11.5px;padding:14px}
+}
+
+/* phones */
+@media (max-width:560px){
+  .topbar{padding:9px 12px}
+  .brand{font-size:16px}
+  #accountChip{max-width:96px;font-size:11.5px;padding:4px 10px}
+  .badge.game{display:none}
+
+  main{padding:14px 12px 40px}
+  .hero h1{font-size:clamp(23px,7vw,30px)}
+  .hero-actions{flex-direction:column}
+  .hero-actions .btn{width:100%}
+
+  .grid{grid-template-columns:1fr;gap:14px}
+  .card{padding:16px}
+
+  .lesson-row .mins{display:none}
+  .lesson-nav{flex-direction:column}
+  .lesson-nav .btn{width:100%;justify-content:center}
+
+  .term{height:260px}
+  .term-out{font-size:12px;padding:10px}
+  .term-form{padding:8px 10px}
+  .term-form input{font-size:12.5px}
+
+  .lab-head{padding:12px 14px;flex-wrap:wrap}
+  .lab-head .status{width:100%;margin-left:0;text-align:right}
+
+  .tasks li{font-size:13px}
+  .py-toolbar .hint{margin-left:0;width:100%}
+
+  .auth-stats{grid-template-columns:1fr 1fr 1fr;gap:6px}
+  .auth-stats b{font-size:17px}
+  .auth-stats span{font-size:10px}
+  .auth-actions .btn{width:100%}
+
+  .dz-row{flex-direction:column;align-items:stretch}
+  .dz-row .btn{width:100%}
+  .dz-confirm{flex-direction:column;align-items:stretch}
+  .dz-confirm .btn{width:100%}
+
+  .fb-stars{gap:6px}
+  .fb-stars label{width:100%;height:38px}
+
+  .notice{font-size:13px;padding:12px 14px}
+  .onboard h1{font-size:clamp(24px,7.5vw,32px)}
+  .choices{flex-direction:column}
+  .choice{width:100%}
+}
+
+/* landscape phones: keep the terminal usable */
+@media (max-height:520px) and (orientation:landscape){
+  .term{height:220px}
+  .topbar{position:static}
+}
+
+/* touch: bigger hit targets */
+@media (hover:none){
+  .btn{padding:11px 16px}
+  .btn.small{padding:9px 14px}
+  .lesson-row{padding:14px}
+  .topnav a{padding:6px 0}
+}
