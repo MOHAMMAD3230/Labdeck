@@ -1,8 +1,7 @@
 /* LabDeck — course and lesson feedback.
- * Submissions are stored in localStorage first, then POSTed to a form-to-email
- * service (Web3Forms by default), which forwards them to the owner's inbox.
- * If the service is unreachable or offline, the entry stays queued and is retried,
- * and a mailto: fallback is offered. */
+ * Submissions are stored in localStorage first, then POSTed to Web3Forms, which
+ * emails them to the owner. hCaptcha gates the endpoint against bots.
+ * Offline or unconfigured: the entry stays queued, and a mailto: fallback is offered. */
 (function () {
   'use strict';
   const S = window.Security;
@@ -11,14 +10,19 @@
   const MAX_TEXT = 1000;
 
   /* ---- configuration ---- */
-  const OWNER_EMAIL = 'mohammadashrafali96@gmail.com';   // where feedback lands
-  const PROVIDER = 'web3forms';                          // 'web3forms' | 'formspree'
-  const ACCESS_KEY = 'YOUR_ACCESS_KEY';                  // paste the key from web3forms.com
-  const FORMSPREE_ID = 'YOUR_FORM_ID';                   // only if PROVIDER = 'formspree'
+  const OWNER_EMAIL = 'mohammadashrafali96@gmail.com';
+  const PROVIDER = 'web3forms';                 // 'web3forms' | 'formspree'
+  const ACCESS_KEY = 'YOUR_ACCESS_KEY';         // from web3forms.com
+  const FORMSPREE_ID = 'YOUR_FORM_ID';          // only if PROVIDER = 'formspree'
+
+  const USE_CAPTCHA = true;
+  const HCAPTCHA_SITEKEY = 'YOUR_HCAPTCHA_SITE_KEY';   // from hcaptcha.com (public key)
 
   const CONFIGURED =
     (PROVIDER === 'web3forms' && ACCESS_KEY && ACCESS_KEY !== 'YOUR_ACCESS_KEY') ||
     (PROVIDER === 'formspree' && FORMSPREE_ID && FORMSPREE_ID !== 'YOUR_FORM_ID');
+
+  const CAPTCHA_ON = USE_CAPTCHA && HCAPTCHA_SITEKEY && HCAPTCHA_SITEKEY !== 'YOUR_HCAPTCHA_SITE_KEY';
 
   function uid() {
     if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
@@ -63,8 +67,24 @@
     };
   }
 
+  /* ---- hCaptcha ---- */
+  let captchaLoading = false;
+  function loadCaptcha() {
+    if (!CAPTCHA_ON || captchaLoading || window.hcaptcha) return;
+    captchaLoading = true;
+    const s = document.createElement('script');
+    s.src = 'https://js.hcaptcha.com/1/api.js';
+    s.async = true;
+    s.defer = true;
+    document.head.appendChild(s);
+  }
+
+  function resetCaptcha() {
+    try { if (window.hcaptcha) window.hcaptcha.reset(); } catch (e) { /* ignore */ }
+  }
+
   /* ---- delivery ---- */
-  function payloadFor(entry) {
+  function payloadFor(entry, captchaToken) {
     const base = {
       subject: `LabDeck feedback — ${entry.courseId} ${entry.rating}/5`,
       course: entry.courseId,
@@ -79,20 +99,19 @@
     if (PROVIDER === 'formspree') {
       return { url: `https://formspree.io/f/${FORMSPREE_ID}`, body: Object.assign({ _subject: base.subject }, base) };
     }
-    return {
-      url: 'https://api.web3forms.com/submit',
-      body: Object.assign({
-        access_key: ACCESS_KEY,
-        from_name: 'LabDeck',
-        botcheck: ''
-      }, base)
-    };
+    const body = Object.assign({
+      access_key: ACCESS_KEY,
+      from_name: 'LabDeck',
+      botcheck: ''
+    }, base);
+    if (captchaToken) body['h-captcha-response'] = captchaToken;
+    return { url: 'https://api.web3forms.com/submit', body };
   }
 
-  async function send(entry) {
+  async function send(entry, captchaToken) {
     if (!CONFIGURED) return false;
     try {
-      const { url, body } = payloadFor(entry);
+      const { url, body } = payloadFor(entry, captchaToken);
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
@@ -111,7 +130,7 @@
   async function flush() {
     if (!CONFIGURED) return;
     for (const entry of Store.pending()) {
-      const ok = await send(entry);
+      const ok = await send(entry, null);   // queued items skip the captcha
       if (!ok) break;
     }
   }
@@ -161,12 +180,16 @@
           <input type="text" name="botcheck" tabindex="-1" autocomplete="off"
                  style="position:absolute;left:-9999px" aria-hidden="true" />
 
+          ${CAPTCHA_ON ? `<div class="fb-captcha"><div class="h-captcha" data-sitekey="${HCAPTCHA_SITEKEY}" data-theme="dark"></div></div>` : ''}
+
           <div class="fb-actions">
             <button type="submit" class="btn primary small">Send feedback</button>
             <span class="fb-status" data-status></span>
           </div>
         </form>
       </section>`;
+
+    if (CAPTCHA_ON) loadCaptcha();
 
     const form = container.querySelector('[data-fb]');
     const status = container.querySelector('[data-status]');
@@ -184,13 +207,21 @@
         return;
       }
 
+      const token = CAPTCHA_ON ? String(data.get('h-captcha-response') || '') : '';
+      if (CAPTCHA_ON && !token) {
+        status.textContent = 'Please complete the captcha.';
+        status.className = 'fb-status err';
+        return;
+      }
+
       const entry = build(opts.courseId, opts.lessonId, rating, data.get('helpful'), data.get('confusing'), data.get('email'));
       Store.add(entry);
       status.textContent = 'Sending…';
       status.className = 'fb-status';
 
-      const ok = await send(entry);
+      const ok = await send(entry, token);
       form.reset();
+      resetCaptcha();
 
       if (ok) {
         status.textContent = 'Thanks — your feedback has been emailed.';
@@ -223,6 +254,7 @@
         <span class="pill">${all.length} stored</span>
         <span class="pill">${Store.pending().length} queued</span>
         <span class="pill">${CONFIGURED ? 'email delivery on' : 'email delivery not configured'}</span>
+        <span class="pill">${CAPTCHA_ON ? 'captcha on' : 'captcha off'}</span>
       </div>
       ${all.length ? `
       <table style="width:100%;border-collapse:collapse;font-size:14px">
