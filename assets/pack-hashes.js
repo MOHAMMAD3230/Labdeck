@@ -7,7 +7,7 @@
  */
 window.PACK_HASHES = {
   linux: '7fa49ec74084688b2e5414b1634d0f90510ee5163b79b5eabb294c8d245dcaba',
-  networking: 'PLACEHOLDER_NETWORKING_SHA256',
+  networking: 'fb6790753dd695e598399412ca181f762cc6dd8243ed46160dfc03fc495275b3',
   python: '7ba9270856b5572951f4273c895fede74a74c7a059484b71fab85f29cb4562a4',
-  sql: 'replace-with-calculated-sql-sha256'
+  sql: '3036b70f72b980e662edead45c580504250ed7e3700ba94ff02833f746ac06bf'
 };
