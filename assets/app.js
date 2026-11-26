@@ -333,6 +333,18 @@
         <div class="bar"><i style="width:${s.pct}%"></i></div><span>${s.pct}%</span>
       </div>
       ${modules}`;
+          <div id="feedbackMount"></div>
+    
+if (window.Feedback) {
+      window.Feedback.render($('#feedbackMount'), {
+        courseId: course.id,
+        title: 'How was ' + course.title + '?'
+      });
+    }
+    
+
+
+
 
     const dl = app.querySelector('[data-download]');
     if (dl) dl.addEventListener('click', () => downloadCourse(course.id, dl));
@@ -418,9 +430,33 @@
       </article>
       <div id="labMount"></div>
       <nav class="lesson-nav">
+           
         ${prev ? `<a class="btn small" href="#/lesson/${course.id}/${prev.id}">← ${esc(prev.title)}</a>` : '<span></span>'}
         ${next ? `<a class="btn small" href="#/lesson/${course.id}/${next.id}">${esc(next.title)} →</a>` : '<span></span>'}
       </nav>`;
+     <div id="lessonFeedback"></div>
+            if (window.Feedback) {
+      window.Feedback.render($('#lessonFeedback'), {
+        courseId: course.id,
+        lessonId: lesson.id,
+        title: 'Was this lesson clear?'
+      });
+    }
+    if (parts[0] === 'feedback') return viewFeedback();
+  function viewFeedback() {
+    app.innerHTML = `
+      <div class="crumbs"><a href="#/">Courses</a> / Feedback</div>
+      <h1>Your feedback</h1>
+      <p style="color:var(--muted);max-width:65ch">Everything sent from this browser. Queued items are retried
+      automatically when the endpoint is reachable.</p>
+      <div id="fbInbox"></div>`;
+    window.Feedback.renderInbox($('#fbInbox'));
+  }
+    
+
+
+
+    
 
     $('#markDone').addEventListener('click', () => {
       const now = !Store.isDone(course.id, lesson.id);
