@@ -15,6 +15,13 @@ const SHELL = [
   './assets/onboarding.js',
   './assets/app.js',
   './assets/terminal.js',
+  './assets/extensions.js',
+  './assets/courses/sql.js',
+  './assets/courses/networking.js',
+  './assets/labs/console.js',
+  './assets/labs/sql.js',
+  './assets/labs/net.js',
+  './assets/pack-hashes.js',
   './assets/pylab.js'
 ];
 
