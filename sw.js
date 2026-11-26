@@ -1,6 +1,6 @@
 /* LabDeck service worker — caches the app shell and reuses downloaded content offline. */
-const SHELL_CACHE = 'labdeck-shell-v4';
-const RUNTIME_CACHE = 'labdeck-runtime-v4';
+const SHELL_CACHE = 'labdeck-shell-v7';
+const RUNTIME_CACHE = 'labdeck-runtime-v7';
 const PACK_CACHE = 'labdeck-packs-v1';
 
 const SHELL = [
