@@ -1,14 +1,24 @@
 /* LabDeck — course and lesson feedback.
- * Every submission is written to localStorage first, then POSTed to /api/feedback.
- * If the endpoint is missing (static-only deploy) or the user is offline, it stays
- * queued and is retried on the next visit or when the connection returns. */
+ * Submissions are stored in localStorage first, then POSTed to a form-to-email
+ * service (Web3Forms by default), which forwards them to the owner's inbox.
+ * If the service is unreachable or offline, the entry stays queued and is retried,
+ * and a mailto: fallback is offered. */
 (function () {
   'use strict';
   const S = window.Security;
   const LS = 'labdeck.feedback.v1';
   const MAX_LOCAL = 50;
   const MAX_TEXT = 1000;
-  const ENDPOINT = '/api/feedback';
+
+  /* ---- configuration ---- */
+  const OWNER_EMAIL = 'mohammadashrafali96@gmail.com';   // where feedback lands
+  const PROVIDER = 'web3forms';                          // 'web3forms' | 'formspree'
+  const ACCESS_KEY = 'YOUR_ACCESS_KEY';                  // paste the key from web3forms.com
+  const FORMSPREE_ID = 'YOUR_FORM_ID';                   // only if PROVIDER = 'formspree'
+
+  const CONFIGURED =
+    (PROVIDER === 'web3forms' && ACCESS_KEY && ACCESS_KEY !== 'YOUR_ACCESS_KEY') ||
+    (PROVIDER === 'formspree' && FORMSPREE_ID && FORMSPREE_ID !== 'YOUR_FORM_ID');
 
   function uid() {
     if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
@@ -53,14 +63,44 @@
     };
   }
 
+  /* ---- delivery ---- */
+  function payloadFor(entry) {
+    const base = {
+      subject: `LabDeck feedback — ${entry.courseId} ${entry.rating}/5`,
+      course: entry.courseId,
+      lesson: entry.lessonId || '—',
+      rating: `${entry.rating}/5`,
+      helpful: entry.helpful || '(blank)',
+      confusing: entry.confusing || '(blank)',
+      submitted_at: entry.createdAt
+    };
+    if (entry.email) base.email = entry.email;
+
+    if (PROVIDER === 'formspree') {
+      return { url: `https://formspree.io/f/${FORMSPREE_ID}`, body: Object.assign({ _subject: base.subject }, base) };
+    }
+    return {
+      url: 'https://api.web3forms.com/submit',
+      body: Object.assign({
+        access_key: ACCESS_KEY,
+        from_name: 'LabDeck',
+        botcheck: ''
+      }, base)
+    };
+  }
+
   async function send(entry) {
+    if (!CONFIGURED) return false;
     try {
-      const res = await fetch(ENDPOINT, {
+      const { url, body } = payloadFor(entry);
+      const res = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(entry)
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify(body)
       });
       if (!res.ok) return false;
+      const data = await res.json().catch(() => ({ success: true }));
+      if (data && data.success === false) return false;
       Store.markSent(entry.id);
       return true;
     } catch (e) {
@@ -69,13 +109,24 @@
   }
 
   async function flush() {
+    if (!CONFIGURED) return;
     for (const entry of Store.pending()) {
       const ok = await send(entry);
       if (!ok) break;
     }
   }
 
-  /* ---------------- form ---------------- */
+  function mailtoLink(entry) {
+    const subject = encodeURIComponent(`LabDeck feedback — ${entry.courseId} ${entry.rating}/5`);
+    const body = encodeURIComponent(
+      `Course: ${entry.courseId}\nLesson: ${entry.lessonId || '-'}\nRating: ${entry.rating}/5\n\n` +
+      `What worked:\n${entry.helpful || '(blank)'}\n\nWhat was confusing:\n${entry.confusing || '(blank)'}\n\n` +
+      `Sent: ${entry.createdAt}`
+    );
+    return `mailto:${OWNER_EMAIL}?subject=${subject}&body=${body}`;
+  }
+
+  /* ---- form ---- */
   function render(container, opts) {
     opts = opts || {};
     if (!container) return;
@@ -83,7 +134,7 @@
     container.innerHTML = `
       <section class="feedback">
         <h3>${S.escapeHTML(opts.title || 'How was this course?')}</h3>
-        <p class="fb-sub">Two questions, thirty seconds. Your answer is saved on this device first, then sent if the endpoint is reachable.</p>
+        <p class="fb-sub">Two questions, thirty seconds. Your answer is saved on this device first, then emailed to the course author.</p>
         <form data-fb novalidate>
           <fieldset class="fb-rating">
             <legend>Overall, how useful was it?</legend>
@@ -107,6 +158,9 @@
             <input type="email" name="email" maxlength="200" placeholder="you@example.com" />
           </label>
 
+          <input type="text" name="botcheck" tabindex="-1" autocomplete="off"
+                 style="position:absolute;left:-9999px" aria-hidden="true" />
+
           <div class="fb-actions">
             <button type="submit" class="btn primary small">Send feedback</button>
             <span class="fb-status" data-status></span>
@@ -120,6 +174,9 @@
     form.addEventListener('submit', async e => {
       e.preventDefault();
       const data = new FormData(form);
+
+      if (data.get('botcheck')) return;   // honeypot tripped
+
       const rating = Number(data.get('rating') || 0);
       if (!rating) {
         status.textContent = 'Pick a rating first.';
@@ -129,22 +186,27 @@
 
       const entry = build(opts.courseId, opts.lessonId, rating, data.get('helpful'), data.get('confusing'), data.get('email'));
       Store.add(entry);
-      status.textContent = 'Saving…';
+      status.textContent = 'Sending…';
       status.className = 'fb-status';
 
       const ok = await send(entry);
       form.reset();
+
       if (ok) {
-        status.textContent = 'Thanks — received.';
+        status.textContent = 'Thanks — your feedback has been emailed.';
         status.className = 'fb-status ok';
       } else {
-        status.textContent = 'Saved on this device. It will be sent automatically when the endpoint is reachable.';
         status.className = 'fb-status warn';
+        status.innerHTML = 'Saved on this device. ';
+        const link = document.createElement('a');
+        link.href = mailtoLink(entry);
+        link.textContent = 'Send it by email instead →';
+        status.appendChild(link);
       }
     });
   }
 
-  /* ---------------- inbox ---------------- */
+  /* ---- inbox ---- */
   function renderInbox(container) {
     const all = Store.all();
     const rows = all.slice().reverse().map(e => `
@@ -160,6 +222,7 @@
       <div class="meta" style="margin-bottom:14px">
         <span class="pill">${all.length} stored</span>
         <span class="pill">${Store.pending().length} queued</span>
+        <span class="pill">${CONFIGURED ? 'email delivery on' : 'email delivery not configured'}</span>
       </div>
       ${all.length ? `
       <table style="width:100%;border-collapse:collapse;font-size:14px">
