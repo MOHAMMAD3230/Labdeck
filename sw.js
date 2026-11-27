@@ -1,6 +1,6 @@
 /* LabDeck service worker — caches the app shell and reuses downloaded content offline. */
-const SHELL_CACHE = 'labdeck-shell-v11';
-const RUNTIME_CACHE = 'labdeck-runtime-v11';
+const SHELL_CACHE = 'labdeck-shell-v12';
+const RUNTIME_CACHE = 'labdeck-runtime-v12';
 const PACK_CACHE = 'labdeck-packs-v1';
 
 const SHELL = [
@@ -41,7 +41,9 @@ const SHELL = [
   './assets/security.js',
   './assets/auth.js',
   './assets/danger.js',
-  './assets/app.js'
+  './assets/app.js',
+  './assets/social.css',
+  './assets/social.js'
 ];
 
 self.addEventListener('install', event => {
