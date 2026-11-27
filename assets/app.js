@@ -1,5 +1,6 @@
 /* LabDeck app shell: hash router, progress store, integrity-checked pack loader,
- * onboarding gate, ticket framing, XP/streak, daily challenge and feedback hooks. */
+ * onboarding gate, ticket framing, XP/streak, daily challenge, feedback hooks
+ * and the About page. */
 (function () {
   'use strict';
 
@@ -247,8 +248,8 @@
       <section class="hero">
         <h1>Learn Linux, Python, SQL and networking by <em>doing</em>.</h1>
         <p>Four courses with live labs that run in your browser: a real shell, a real Python interpreter,
-        a real SQL engine and a simulated network. Content is downloaded once, integrity-checked and
-        cached locally, so you can keep practising offline.</p>
+        a real SQL engine and a simulated network. Content is downloaded once, integrity-checked and cached
+        locally, so you can keep practising offline.</p>
         <div class="hero-actions">
           <a class="btn primary" href="#/course/linux">Start Linux Essentials</a>
           <a class="btn" href="#/course/python">Start Python Foundations</a>
@@ -262,9 +263,9 @@
       <p style="color:var(--muted);margin:6px 0 0">End-to-end tasks graded against real state — not multiple choice.</p>
       <div class="grid">${projectCards}</div>
       <div class="notice">
-        <strong>How storage works.</strong> Progress, lab task state, quiz scores, XP and feedback live in
+        <strong>How storage works.</strong> Progress, lab task state, quiz scores and XP live in
         <code>localStorage</code>. Course packs and the Python runtime live in <code>Cache Storage</code> and are
-        reused on every later visit. Every pack is hashed with SHA-256 and checked on load.
+        reused on every later visit. Every pack is hashed with SHA-256 and compared against the expected value.
         <a href="#/security">See the security checks →</a>
       </div>`;
 
@@ -338,7 +339,6 @@
 
     const dl = app.querySelector('[data-download]');
     if (dl) dl.addEventListener('click', () => downloadCourse(course.id, dl));
-
     const reset = app.querySelector('[data-reset]');
     if (reset) reset.addEventListener('click', () => {
       flatLessons(course).forEach(l => Store.setDone(course.id, l.id, false));
@@ -358,7 +358,7 @@
     }
   }
 
-  /* ---------------- lab mounting (registry-aware) ---------------- */
+  /* ---------------- labs ---------------- */
   function mountLab(container, lab, courseId, lessonId) {
     const ticket = G.ticketFor(courseId, lessonId);
     if (ticket) {
@@ -706,17 +706,6 @@
     mountLab($('#labMount'), p.lab, p.id, 'project');
   }
 
-  /* ---------------- feedback inbox ---------------- */
-  function viewFeedback() {
-    app.innerHTML = `
-      <div class="crumbs"><a href="#/">Courses</a> / Feedback</div>
-      <h1>Your feedback</h1>
-      <p style="color:var(--muted);max-width:65ch">Everything sent from this browser. Queued items are retried
-      automatically when the endpoint is reachable.</p>
-      <div id="fbInbox"></div>`;
-    if (window.Feedback) window.Feedback.renderInbox($('#fbInbox'));
-  }
-
   /* ---------------- offline ---------------- */
   async function viewOffline() {
     const rows = [];
@@ -744,7 +733,6 @@
         <dt>Lab state</dt><dd>localStorage · ${LS_LABS}</dd>
         <dt>Quiz scores</dt><dd>localStorage · ${LS_QUIZ}</dd>
         <dt>XP &amp; streak</dt><dd>localStorage · labdeck.game.v1</dd>
-        <dt>Feedback</dt><dd>localStorage · labdeck.feedback.v1</dd>
         <dt>Course packs</dt><dd>Cache Storage · ${PACK_CACHE}</dd>
         <dt>Python runtime</dt><dd>${pyReady ? 'loaded in this session' : 'downloaded on first Run, then cached'}</dd>
         <dt>Storage used</dt><dd>${usage} of ${quota}</dd>
@@ -842,7 +830,7 @@
               ${secure ? 'yes' : 'no — crypto.subtle and service workers unavailable'}</td></tr>
           <tr><td style="padding:9px 0;border-bottom:1px solid var(--line)">Course pack integrity (SHA-256)</td>
               <td style="border-bottom:1px solid var(--line);color:var(--accent)">
-              ${Object.keys(pins).length} trusted</td></tr>
+              ${Object.keys(pins).length} pinned</td></tr>
           <tr><td style="padding:9px 0;border-bottom:1px solid var(--line)">Shell input limit</td>
               <td style="border-bottom:1px solid var(--line)">${S.MAX_COMMAND} characters, control chars rejected</td></tr>
           <tr><td style="padding:9px 0;border-bottom:1px solid var(--line)">Python code limit</td>
@@ -876,6 +864,48 @@
     });
   }
 
+  /* ---------------- about ---------------- */
+  function viewAbout() {
+    const links = window.Social ? window.Social.linkHTML() : '';
+    const name = window.Social ? window.Social.NAME : 'LabDeck';
+
+    app.innerHTML = `
+      <div class="crumbs"><a href="#/">Courses</a> / About</div>
+      <section class="about">
+        <p class="kicker">About</p>
+        <h1>${esc(name)}</h1>
+        <p class="about-lead">I build hands-on learning tools — the kind where you type a command and something actually happens.</p>
+
+        <p>LabDeck started from a simple frustration: most tutorials show you a terminal and then talk over it.
+        You watch, you nod, you remember nothing. So this site puts the terminal in your browser — a real shell
+        with a virtual filesystem, a real Python interpreter compiled to WebAssembly, a real SQL engine, and a
+        simulated network you can break safely.</p>
+
+        <p>Every lab is graded against actual state: the file really has to be executable, the query really has to
+        return the right rows. Nothing is multiple choice. Progress is stored in your browser, the course content
+        is cached for offline use, and there is no account server to lose your data.</p>
+
+        <div class="about-stats">
+          <div><b>4</b><span>courses</span></div>
+          <div><b>30</b><span>lessons</span></div>
+          <div><b>12</b><span>live labs</span></div>
+          <div><b>2</b><span>projects</span></div>
+        </div>
+
+        <h2>Elsewhere</h2>
+        <div class="about-links">${links || '<span style="color:var(--muted);font-size:13px">No links configured yet.</span>'}</div>
+
+        <h2>Contact</h2>
+        <p>Feedback on any course goes straight to my inbox — there is a form at the bottom of every course page.
+        For anything else, email <a href="mailto:mohammadashrafali96@gmail.com">mohammadashrafali96@gmail.com</a>.</p>
+
+        <h2>Built with</h2>
+        <p>Vanilla JavaScript, no framework, no build step. Pyodide for the Python runtime, a hand-written shell
+        and SQL engine for the labs, a service worker for offline, and a CSP plus an HTML sanitizer for safety.
+        The source is on <a href="https://github.com/MOHAMMAD3230" target="_blank" rel="noopener noreferrer">GitHub</a>.</p>
+      </section>`;
+  }
+
   function viewNotFound() {
     app.innerHTML = `<h1>Not found</h1><p><a href="#/">Back to courses</a></p>`;
   }
@@ -887,7 +917,7 @@
     window.scrollTo({ top: 0 });
 
     // First run: everything funnels through onboarding, except the utility pages.
-    const utility = ['security', 'offline', 'start', 'feedback'].includes(parts[0]);
+    const utility = ['security', 'offline', 'start', 'about', 'feedback'].includes(parts[0]);
     if (!G.Game.state.onboarded && !utility) return viewStart();
 
     if (parts.length === 0) return viewHome();
@@ -898,10 +928,22 @@
     if (parts[0] === 'daily') return viewDaily();
     if (parts[0] === 'projects') return viewProjects();
     if (parts[0] === 'project' && parts[1]) return viewProject(parts[1]);
-    if (parts[0] === 'feedback') return viewFeedback();
     if (parts[0] === 'offline') return viewOffline();
     if (parts[0] === 'security') return viewSecurity();
+    if (parts[0] === 'about') return viewAbout();
+    if (parts[0] === 'feedback') return viewFeedback();
     return viewNotFound();
+  }
+
+  /* ---------------- feedback page ---------------- */
+  function viewFeedback() {
+    app.innerHTML = `
+      <div class="crumbs"><a href="#/">Courses</a> / Feedback</div>
+      <h1>Your feedback</h1>
+      <p style="color:var(--muted);max-width:65ch">Everything you have sent from this browser. Queued items are
+      retried automatically when the endpoint is reachable.</p>
+      <div id="fbInbox"></div>`;
+    if (window.Feedback) window.Feedback.renderInbox($('#fbInbox'));
   }
 
   /* ---------------- boot ---------------- */
