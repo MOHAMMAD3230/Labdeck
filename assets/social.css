@@ -1,4 +1,4 @@
-/* LabDeck — footer social links */
+/* LabDeck — footer social links + About page */
 
 .social{
   display:flex;align-items:center;justify-content:center;gap:18px;
@@ -33,4 +33,48 @@
 @media (max-width:560px){
   .social{flex-direction:column;gap:12px}
   .social-links a{width:38px;height:38px}
+}
+
+/* ============ about page ============ */
+.about{max-width:70ch}
+.about .kicker{
+  font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--accent);margin:0 0 10px;
+}
+.about h1{
+  font-size:clamp(26px,4.4vw,38px);line-height:1.1;letter-spacing:-.03em;
+  margin:0 0 14px;
+}
+.about .about-lead{
+  font-size:17px;color:var(--text);line-height:1.55;margin:0 0 20px;
+}
+.about p{color:#cfd8f2;line-height:1.65;margin:0 0 16px}
+.about h2{
+  font-size:13px;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--muted);margin:34px 0 12px;
+}
+
+.about-stats{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:26px 0 8px;
+}
+.about-stats > div{
+  border:1px solid var(--line);border-radius:12px;background:#0d1428;
+  padding:14px 8px;text-align:center;
+}
+.about-stats b{display:block;font-size:22px;letter-spacing:-.02em;line-height:1.2}
+.about-stats span{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+
+.about-links{display:flex;gap:8px;flex-wrap:wrap}
+.about-links a{
+  display:grid;place-items:center;
+  width:40px;height:40px;border-radius:10px;
+  border:1px solid var(--line);background:#0d1428;
+  color:var(--muted);transition:.15s;
+}
+.about-links a:hover{color:var(--text);border-color:#3a4a75;background:var(--panel-2);transform:translateY(-1px)}
+.about-links svg{width:18px;height:18px;fill:currentColor;display:block}
+
+@media (max-width:560px){
+  .about-stats{grid-template-columns:repeat(2,1fr)}
+  .about .about-lead{font-size:15.5px}
 }
