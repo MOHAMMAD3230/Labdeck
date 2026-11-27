@@ -1,4 +1,4 @@
-/* LabDeck — footer social links.
+/* LabDeck — footer social links + About page helpers.
  * Fill in the URLs below. Any entry left empty is hidden automatically,
  * so you can add profiles one at a time. Icons are inline SVG: no external
  * requests, no icon font, works offline. */
@@ -34,33 +34,33 @@
     ));
   }
 
+  function active() {
+    return LINKS.filter(l => l.url && !/your|example\.com/i.test(l.url));
+  }
+
+  /** Markup for the icon row — reused by the footer and the About page. */
+  function linkHTML() {
+    return active().map(l => {
+      const external = /^https?:/i.test(l.url);
+      const attrs = external ? ' target="_blank" rel="noopener noreferrer me"' : '';
+      return `<a href="${esc(l.url)}"${attrs} aria-label="${esc(l.label)}" title="${esc(l.label)}">` +
+        `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${ICONS[l.id] || ''}</svg></a>`;
+    }).join('');
+  }
+
   function render() {
     const foot = document.querySelector('.foot');
     if (!foot || document.querySelector('.social')) return;
-
-    const active = LINKS.filter(l => l.url && !/your|example\.com/i.test(l.url));
-    if (!active.length) return;
+    if (!active().length) return;
 
     const wrap = document.createElement('div');
     wrap.className = 'social';
-
-    const links = active.map(l => {
-      const external = /^https?:/i.test(l.url);
-      const attrs = external
-        ? ' target="_blank" rel="noopener noreferrer me"'
-        : '';
-      return `<a href="${esc(l.url)}"${attrs} aria-label="${esc(l.label)}" title="${esc(l.label)}">
-        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${ICONS[l.id] || ''}</svg>
-      </a>`;
-    }).join('');
-
     wrap.innerHTML = `
       <p class="social-name">© ${new Date().getFullYear()} ${esc(NAME)}</p>
-      <div class="social-links">${links}</div>`;
-
+      <div class="social-links">${linkHTML()}</div>`;
     foot.appendChild(wrap);
   }
 
   document.addEventListener('DOMContentLoaded', render);
-  window.Social = { render };
+  window.Social = { render, linkHTML, NAME };
 })();
