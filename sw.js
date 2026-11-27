@@ -9,6 +9,7 @@ const SHELL = [
   './manifest.webmanifest',
   './assets/styles.css',
   './assets/onboarding.css',
+  './assets/gtag.js',
   './assets/pack-hashes.js',
   './assets/security.js',
   './assets/catalog.js',
